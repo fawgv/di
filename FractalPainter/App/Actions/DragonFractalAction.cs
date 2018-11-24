@@ -1,40 +1,39 @@
 ﻿using System;
 using FractalPainting.App.Fractals;
 using FractalPainting.Infrastructure.Common;
+using FractalPainting.Infrastructure.Custom;
 using FractalPainting.Infrastructure.Injection;
 using FractalPainting.Infrastructure.UiActions;
 using Ninject;
 
 namespace FractalPainting.App.Actions
 {
-	public class DragonFractalAction : IUiAction, INeed<IImageHolder>
-	{
-		private IImageHolder imageHolder;
 
-		public void SetDependency(IImageHolder dependency)
-		{
-			imageHolder = dependency;
-		}
+    public class DragonFractalAction : IUiAction
+    {
+        private readonly IDragonPointersFactory dragonPointersFactory;
+        private readonly Func<DragonSettings> createSettings;
 
-		public string Category => "Фракталы";
-		public string Name => "Дракон";
-		public string Description => "Дракон Хартера-Хейтуэя";
+        public DragonFractalAction(IDragonPointersFactory dragonPointersFactory
+        , Func<DragonSettings> createSettings)
+        {
+            this.dragonPointersFactory = dragonPointersFactory;
+            this.createSettings = createSettings;
+        }
 
-		public void Perform()
-		{
-			var dragonSettings = CreateRandomSettings();
-			// редактируем настройки:
-			SettingsForm.For(dragonSettings).ShowDialog();
-			// создаём painter с такими настройками
-			var container = new StandardKernel();
-			container.Bind<IImageHolder>().ToConstant(imageHolder);
-			container.Bind<DragonSettings>().ToConstant(dragonSettings);
-			container.Get<DragonPainter>().Paint();
-		}
+        public string Category => "Фракталы";
+        public string Name => "Дракон";
+        public string Description => "Дракон Хартера-Хейтуэя";
 
-		private static DragonSettings CreateRandomSettings()
-		{
-			return new DragonSettingsGenerator(new Random()).Generate();
-		}
-	}
+        public void Perform()
+        {
+            var dragonSettings = createSettings();
+            // редактируем настройки:
+            SettingsForm.For(dragonSettings).ShowDialog();
+            // создаём painter с такими настройками
+
+            dragonPointersFactory.CreateDragonPointer(dragonSettings).Paint();
+        }
+        
+    }
 }
